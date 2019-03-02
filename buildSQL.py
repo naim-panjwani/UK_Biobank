@@ -1,3 +1,6 @@
+######################################################################################
+# This script is to initialize the MySQL database for the desired list of phenotypes #
+######################################################################################
 import os
 import pandas as pd
 import numpy as np
@@ -82,18 +85,24 @@ for i in np.arange(len(download_urls)):
 
 # Load into a MySQL database in chunks:
 engine = sa.create_engine('mysql://root:root@localhost/uk_biobank')
-# inspector = inspect(engine)
-# tables = inspector.get_table_names()
+inspector = inspect(engine)
+tables = inspector.get_table_names()
 # columns = inspector.get_columns(tables[0])
 # for column in columns:
 #     print(column["name"], column["type"])
 
 # chunks = pd.read_csv(filename, compression='gzip', sep='\t', nrows=100000)
 for filename in filenames:
-        chunks = pd.read_csv(filename, compression='gzip', sep='\t', chunksize=100000)
-        for chunk in chunks:
-                chunk.to_sql(name=filename, if_exists='append', con=engine)
-        conn = engine.connect()
-        query = f'SELECT *, substring_index(SUBSTRING_INDEX(`variant`, ":", 1), ":", -1) as chr, substring_index(SUBSTRING_INDEX(`variant`, ":", 2), ":", -1) as pos FROM `uk_biobank`.`{filename}`;'
-        # query = f"SELECT variant FROM {filename}"
-        newdb = pd.read_sql(query, conn)
+        if filename not in tables:
+                chunks = pd.read_csv(filename, compression='gzip', sep='\t', chunksize=100000)
+                for chunk in chunks:
+                        chunk.to_sql(name=filename, if_exists='append', con=engine)
+                
+
+# # Sample query:                
+# conn = engine.connect()
+# query = (f"""SELECT *, substring_index(SUBSTRING_INDEX(`variant`, ':', 1), ":", -1) as chr,
+# substring_index(SUBSTRING_INDEX(`variant`, ':', 2), ":", -1) as pos
+# FROM `uk_biobank`.`{filename}`
+# limit 2000;""")
+# newdb = pd.read_sql(query, conn)
