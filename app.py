@@ -10,7 +10,8 @@ import numpy as np
 import sqlalchemy
 from sqlalchemy.ext.automap import automap_base
 from sqlalchemy.orm import Session
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, inspect
+
 
 from flask import Flask, jsonify, render_template
 from flask_sqlalchemy import SQLAlchemy
@@ -22,7 +23,7 @@ app = Flask(__name__)
 # Database Setup
 #################################################
 
-app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///db/bellybutton.sqlite" # could not get this to work no matter what I tried!
+app.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:root@127.0.0.1/uk_biobank" # could not get this to work no matter what I tried!
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False # to disable tracking by flask of SQLAlchemy session modifications
 db = SQLAlchemy(app)
 
@@ -31,11 +32,19 @@ Base = automap_base()
 # reflect the tables
 Base.prepare(db.engine, reflect=True)
 
-# Save references to each table
-# Base.classes.keys()
-Samples_Metadata = Base.classes.sample_metadata
-Samples = Base.classes.samples
+# Base.metadata.tables # the tables are listed here
+# Base.classes.keys() # but this returns an empty list and shows tables are not reflected...
+#                     # perhaps I had to define the primary key per table and foreign keys
 
+inspector = inspect(db.engine)
+pheno_tables = inspector.get_table_names()
+try:
+    pheno_tables.remove('variants')
+except:
+    pass
+
+conn = db.engine.connect()
+#session = Session(db.engine) # can't use as tables don't get reflected
 
 @app.route("/")
 def index():
@@ -43,65 +52,39 @@ def index():
     return render_template("index.html")
 
 
-@app.route("/names")
-def names():
-    """Return a list of sample names."""
+@app.route("/<phenotype>/<chr>/<startbp>/<endbp>")
+def phenoAssocResults(phenotype, chr, startbp, endbp):
+    """Return the association results for phenotype at chr:startbp-endbp."""
 
     # Use Pandas to perform the sql query
-    stmt = db.session.query(Samples).statement
-    df = pd.read_sql_query(stmt, db.session.bind)
+    # Note: can't do it via a session.query as the tables are not reflecting on Base
+    if (int(endbp) - int(startbp) > 2000000):
+        return "Please query a genomic region less than 2Mbp"
+    else:
+        stmt = (f"""SELECT *
+        FROM `uk_biobank`.`{phenotype}`
+        WHERE chr = {chr} AND pos >= {startbp} AND pos <= {endbp};""")
+        df = pd.read_sql_query(stmt, conn)
 
-    # Return a list of the column names (sample names)
-    return jsonify(list(df.columns)[2:])
+        # Format the data to send as json
+        return jsonify(df.to_dict(orient='list'))
 
+@app.route("/<chr>/<startbp>/<endbp>")
+def variantDetails(chr, startbp, endbp):
+    """Return the data in variants table for region chr:startbp-endbp."""
 
-@app.route("/metadata/<sample>")
-def sample_metadata(sample):
-    """Return the MetaData for a given sample."""
-    sel = [
-        Samples_Metadata.sample,
-        Samples_Metadata.ETHNICITY,
-        Samples_Metadata.GENDER,
-        Samples_Metadata.AGE,
-        Samples_Metadata.LOCATION,
-        Samples_Metadata.BBTYPE,
-        Samples_Metadata.WFREQ,
-    ]
+    # Use Pandas to perform the sql query
+    # Note: can't do it via a session.query as the tables are not reflecting on Base
+    if (int(endbp) - int(startbp) > 2000000):
+        return "Please query a genomic region less than 2Mbp"
+    else:
+        stmt = (f"""SELECT *
+        FROM `uk_biobank`.`variants`
+        WHERE chr = {chr} AND pos >= {startbp} AND pos <= {endbp};""")
+        df = pd.read_sql_query(stmt, conn)
 
-    results = db.session.query(*sel).filter(Samples_Metadata.sample == sample).all()
-
-    # Create a dictionary entry for each row of metadata information
-    sample_metadata = {}
-    for result in results:
-        sample_metadata["sample"] = result[0]
-        sample_metadata["ETHNICITY"] = result[1]
-        sample_metadata["GENDER"] = result[2]
-        sample_metadata["AGE"] = result[3]
-        sample_metadata["LOCATION"] = result[4]
-        sample_metadata["BBTYPE"] = result[5]
-        sample_metadata["WFREQ"] = result[6]
-
-    print(sample_metadata)
-    return jsonify(sample_metadata)
-
-
-@app.route("/samples/<sample>")
-def samples(sample):
-    """Return `otu_ids`, `otu_labels`,and `sample_values`."""
-    stmt = db.session.query(Samples).statement
-    df = pd.read_sql_query(stmt, db.session.bind)
-
-    # Filter the data based on the sample number and
-    # only keep rows with values above 1
-    sample_data = df.loc[df[sample] > 1, ["otu_id", "otu_label", sample]]
-    # Format the data to send as json
-    data = {
-        "otu_ids": sample_data.otu_id.values.tolist(),
-        "sample_values": sample_data[sample].values.tolist(),
-        "otu_labels": sample_data.otu_label.tolist(),
-    }
-    return jsonify(data)
-
+        # Format the data to send as json
+        return jsonify(df.to_dict(orient='list'))
 
 if __name__ == "__main__":
     app.run()

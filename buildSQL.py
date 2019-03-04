@@ -21,7 +21,6 @@ def download(url, filename):
     u = urllib.request.urlopen(url)
     data = u.read()
     u.close()
-
     with open(filename, "wb") as f: 
         f.write(data)
 
@@ -65,6 +64,7 @@ for phenotype in phenotype_list:
                         pheno_descriptions.append(ukbb_manifest_df[['Phenotype Description']].iloc[i,0])
                         sex.append(ukbb_manifest_df[['Sex']].iloc[i,0])
                         filenames.append(ukbb_manifest_df[['File']].iloc[i,0])
+
 download_urls = [url.replace('dl=0','dl=1') for url in download_urls]
 
 # Make downloads folder and download required files:
@@ -81,23 +81,51 @@ for i in np.arange(len(download_urls)):
                 download(url, filename)
         else:
                 print(filename + " exists")
-
+# Also download the variants file:
+if not os.path.isfile("variants.tsv.bgz"):
+        download("https://www.dropbox.com/s/puxks683vb0omeg/variants.tsv.bgz?dl=1", "variants.tsv.bgz")
 
 # Load into a MySQL database in chunks:
-engine = sa.create_engine('mysql://root:root@localhost/uk_biobank')
+engine = sa.create_engine('mysql://root:root@127.0.0.1/uk_biobank')
 inspector = inspect(engine)
 tables = inspector.get_table_names()
-# columns = inspector.get_columns(tables[0])
+print(tables)
+# columns = inspector.get_columns(tables[1])
 # for column in columns:
 #     print(column["name"], column["type"])
 
-# chunks = pd.read_csv(filename, compression='gzip', sep='\t', nrows=100000)
-for filename in filenames:
+if "variants" not in tables:
+        chunks = pd.read_csv("variants.tsv.bgz", compression="gzip", sep="\t", chunksize=200000)
+        for chunk in chunks:
+                chr = []
+                for chrrow in list(chunk['chr']):
+                        if chrrow == "X":
+                                chr.append(23)
+                        else:
+                                chr.append(int(chrrow))
+                chunk['chr'] = chr
+                chunk.to_sql(name="variants", if_exists='append', con=engine)
+
+for filename in filenames[0:2]: # too large; will focus on just the first two
         if filename not in tables:
-                chunks = pd.read_csv(filename, compression='gzip', sep='\t', chunksize=100000)
+                chunks = pd.read_csv(filename, compression='gzip', sep='\t', chunksize=200000)
                 for chunk in chunks:
-                        chunk.to_sql(name=filename, if_exists='append', con=engine)
-                
+                        # Adding chromosome and basepair position columns from variant column:
+                        chr = []
+                        for variant in list(chunk['variant']):
+                                chrom = variant.split(":")[0]
+                                if chrom == "X":
+                                        chr.append(23)
+                                else:
+                                        chr.append(int(chrom))
+                        chunk['chr'] = chr
+                        chunk['pos'] = [int(variant.split(":")[1]) for variant in list(chunk['variant'])]
+                        cols = chunk.columns.tolist()
+                        cols = cols[-2:] + cols[:-2] # re-arranging to put chr and bp columns in front
+                        chunk = chunk[cols]
+                        tbl_name = filename.split(".")[0] + "_" + filename.split(".")[3]
+                        chunk.to_sql(name=tbl_name, if_exists='append', con=engine) # push this chunk to sql
+
 
 # # Sample query:                
 # conn = engine.connect()
