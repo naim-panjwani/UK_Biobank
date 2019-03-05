@@ -1,15 +1,15 @@
-function buildPlot(pos, pval, variant, minor_AF, phenoDescription) {
+function buildPlot(data) {
   var data = [{
-    x: pos,
-    y: pval.map(p => -Math.log10(p)),
+    x: data.map(row => row.pos),
+    y: data.map(row => -Math.log10(row.pval)),
     mode: 'markers',
     type: 'scatter',
-    text: variant,
+    text: data.map(row => row.variant),
     hoverinfo: 'x+y+text+value'
   }];
   
   var layout = {
-    title: `Association Summary for: ${phenoDescription}`
+    title: `Association Summary`
   };
   
   Plotly.newPlot('plot', data, layout);
@@ -37,9 +37,9 @@ function init() {
     const endingPos = 205920191;
 
     var url = `${firstPhenotype}/${startingChr}/${startingPos}/${endingPos}`;
-    d3.json(url).then(function(data) {
-      //console.log(data);
-      buildPlot(data.pos, data.pval, data.variant, data.minor_AF);
+    d3.json(url).then(function(response) {
+      data = response;
+      buildPlot(data);
       // buildTable(data);
     });
   });
