@@ -39,7 +39,30 @@ function init() {
     var url = `${firstPhenotype}/${startingChr}/${startingPos}/${endingPos}`;
     d3.json(url).then(function(response) {
       data = response;
-      buildPlot(data);
+      
+      // buildPlot(data);
+      myx = data.pos;
+      myy = data.pval;
+      console.log(myx);
+      console.log(myy);
+      mylogy = myy.forEach(p => -Math.log10(p));
+      console.log(mylogy);
+      var data = [{
+        x: data.pos,
+        y: data.map(row => (row.pval)).forEach(p => -Math.log10(p)),
+        mode: 'markers',
+        type: 'scatter',
+        text: data.map(row => row.variant),
+        hoverinfo: 'x+y+text+value'
+      }];
+      
+      var layout = {
+        title: `Association Summary`
+      };
+      
+      Plotly.newPlot('plot', data, layout);
+
+
       // buildTable(data);
     });
   });
