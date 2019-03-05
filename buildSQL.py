@@ -106,6 +106,9 @@ if "variants" not in tables:
                 chunk['chr'] = chr
                 chunk.to_sql(name="variants", if_exists='append', con=engine)
 
+if "manifest" not in tables:
+        ukbb_manifest_df.to_sql(name="manifest", con=engine)
+
 for filename in filenames[0:2]: # too large; will focus on just the first two
         if filename not in tables:
                 chunks = pd.read_csv(filename, compression='gzip', sep='\t', chunksize=200000)

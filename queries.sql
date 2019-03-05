@@ -27,6 +27,7 @@ ALTER TABLE `uk_biobank`.`3062_raw_both_sexes`
 CHANGE COLUMN bp pos int;
 
 
-SELECT * FROM 3062_irnt_both_sexes limit 10;
-SELECT * FROM variants limit 10;
+SELECT * FROM `uk_biobank`.`3062_irnt_both_sexes` limit 10;
+SELECT * FROM uk_biobank.variants WHERE chr=23 AND pos=2700027 AND variant="X:2700027:T:C" limit 1;
 
+SELECT * FROM `uk_biobank`.`manifest` WHERE `manifest`.`Phenotype Code` = "3062_irnt" AND `manifest`.`Sex` = "both_sexes";
