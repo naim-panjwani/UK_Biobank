@@ -45,7 +45,7 @@ function init() {
       var myy = data.pval;
       console.log(myx);
       console.log(myy);
-      var mylogy = myy.forEach(p => -1*(Math.log10(p)));
+      var mylogy = myy.map(p => -Math.log10(p));
       console.log(mylogy);
       var myyx = data.pval
       var data = [{
