@@ -41,18 +41,19 @@ function init() {
       data = response;
       
       // buildPlot(data);
-      myx = data.pos;
-      myy = data.pval;
+      var myx = data.pos;
+      var myy = data.pval;
       console.log(myx);
       console.log(myy);
-      mylogy = myy.forEach(p => -Math.log10(p));
+      var mylogy = myy.forEach(p => -1*(Math.log10(p)));
       console.log(mylogy);
+      var myyx = data.pval
       var data = [{
         x: data.pos,
-        y: data.map(row => (row.pval)).forEach(p => -Math.log10(p)),
+        y: mylogy,
         mode: 'markers',
         type: 'scatter',
-        text: data.map(row => row.variant),
+        text: data.variant,
         hoverinfo: 'x+y+text+value'
       }];
       

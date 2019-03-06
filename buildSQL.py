@@ -126,6 +126,7 @@ for filename in filenames[0:2]: # too large; will focus on just the first two
                         cols = chunk.columns.tolist()
                         cols = cols[-2:] + cols[:-2] # re-arranging to put chr and bp columns in front
                         chunk = chunk[cols]
+                        chunk.set_index(['chr', 'pos'], inplace=True)
                         tbl_name = filename.split(".")[0] + "_" + filename.split(".")[3]
                         chunk.to_sql(name=tbl_name, if_exists='append', con=engine) # push this chunk to sql
 
@@ -137,3 +138,5 @@ for filename in filenames[0:2]: # too large; will focus on just the first two
 # FROM `uk_biobank`.`{filename}`
 # limit 2000;""")
 # newdb = pd.read_sql(query, conn)
+
+
