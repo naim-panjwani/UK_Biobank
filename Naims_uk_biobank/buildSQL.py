@@ -13,9 +13,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import create_engine, inspect, String
 import pymysql
 pymysql.install_as_MySQLdb()
-# import dropbox
-# import wget
-# import spacy
+import mysql
 
 def download(url, filename):
     u = urllib.request.urlopen(url)
@@ -99,7 +97,11 @@ else:
 
 
 # Initialize MySQL database in chunks (taking small chunks for now as proof of concept for the app):
-engine = sa.create_engine('mysql://root:root@127.0.0.1/uk_biobank')
+#engine = sa.create_engine('mysql://root:root@127.0.0.1/uk_biobank')
+ca_path = os.path.join("C:/","ssl","BaltimoreCyberTrustRoot.crt.pem")
+cnx = mysql.connector.connect(user="naimpanjwani@naimsukbiobank", password="YF2izjv!", host="naimsukbiobank.mysql.database.azure.com", port=3306, database="naimsukbiobank", ssl_ca=ca_path, ssl_verify_cert=true)
+# ssl_args = {'ssl_ca': ca_path}
+# engine = sa.create_engine('mysql://naimpanjwani@naimsukbiobank:YF2izjv!@naimsukbiobank.mysql.database.azure.com:3306/naimsukbiobank', connect_args=ssl_args)
 inspector = inspect(engine)
 tables = inspector.get_table_names()
 print(tables)
@@ -131,34 +133,10 @@ if "phenotypes_both_sexes" not in tables:
         pheno_df.to_sql(name="phenotypes_both_sexes", index=True, index_label='phenotype', con=engine, dtype={'phenotype': String(100)})
         engine.execute("ALTER TABLE `uk_biobank`.`phenotypes_both_sexes` add primary key(phenotype(100));")
 
-# Not necessary...
-# if "manifest" not in tables:
-#         ukbb_manifest_df.to_sql(name="manifest", con=engine)
-
-
 for filename in filenames:
         if filename not in tables:
                 chunks = pd.read_csv(filename, compression='gzip', sep='\t', chunksize=100000)
                 for chunk in chunks:
-                        # # Adding chromosome and basepair position columns from variant column:  <--- skipping this; will do a join with variants table on variant column
-                        # chr = []
-                        # for variant in list(chunk['variant']):
-                        #         chrom = variant.split(":")[0]
-                        #         if chrom == "X":
-                        #                 chr.append(23)
-                        #         else:
-                        #                 try:
-                        #                         chr.append(int(chrom))
-                        #                 except:
-                        #                         chr.append(chrom)
-                        # chunk['chr'] = chr
-                        # chunk['pos'] = [int(variant.split(":")[1]) for variant in list(chunk['variant'])]
-                        # chunk['ref'] = [variant.split(":")[2] for variant in list(chunk['variant'])]
-                        # chunk['alt'] = [variant.split(":")[3] for variant in list(chunk['variant'])]
-                        # cols = chunk.columns.tolist()
-                        # cols = cols[-4:] + cols[:-4] # re-arranging to put chr,pos,ref,alt columns in front
-                        # chunk = chunk[cols]
-                        # chunk.set_index(['chr', 'pos','ref','alt'], inplace=True)
                         tbl_name = filename.split(".")[0] + "_" + filename.split(".")[3]
                         chunk.set_index(['variant'], inplace=True)
                         chunk.to_sql(name=tbl_name, if_exists='append', index=True, index_label=['variant'], con=engine, dtype={'variant': String(512)}) # push this chunk to sql
