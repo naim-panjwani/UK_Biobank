@@ -108,7 +108,7 @@ print(tables)
 #     print(column["name"], column["type"])
 
 if "variants" not in tables:
-        chunks = pd.read_csv("variants.tsv.bgz", compression="gzip", sep="\t", chunksize=5000)
+        chunks = pd.read_csv("variants.tsv.bgz", compression="gzip", sep="\t", chunksize=100000)
         for chunk in chunks:
                 chr = []
                 for chrrow in list(chunk['chr']):
@@ -123,7 +123,6 @@ if "variants" not in tables:
                 chunk.set_index(['chr','pos','ref','alt', 'variant'], inplace=True)
                 chunk.to_sql(name="variants", if_exists='append', index=True, index_label=['chr','pos','ref','alt', 'variant', 'rsid'], 
                         con=engine, dtype={'ref': String(512), 'alt': String(512), 'variant': String(512), 'rsid': String(50)})
-                break
         engine.execute("ALTER TABLE `uk_biobank`.`variants` add primary key(chr, pos, ref(50), alt(50));")
 
 if "phenotypes_both_sexes" not in tables:
@@ -139,7 +138,7 @@ if "phenotypes_both_sexes" not in tables:
 
 for filename in filenames:
         if filename not in tables:
-                chunks = pd.read_csv(filename, compression='gzip', sep='\t', chunksize=5000)
+                chunks = pd.read_csv(filename, compression='gzip', sep='\t', chunksize=100000)
                 for chunk in chunks:
                         # # Adding chromosome and basepair position columns from variant column:  <--- skipping this; will do a join with variants table on variant column
                         # chr = []
@@ -163,7 +162,6 @@ for filename in filenames:
                         tbl_name = filename.split(".")[0] + "_" + filename.split(".")[3]
                         chunk.set_index(['variant'], inplace=True)
                         chunk.to_sql(name=tbl_name, if_exists='append', index=True, index_label=['variant'], con=engine, dtype={'variant': String(512)}) # push this chunk to sql
-                        break
                 engine.execute(f"""ALTER TABLE `uk_biobank`.`{tbl_name}` add primary key(variant(512));""")
 
 
