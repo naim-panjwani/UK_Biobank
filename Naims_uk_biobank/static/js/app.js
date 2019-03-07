@@ -30,11 +30,11 @@ function init() {
 
     // Use the first sample from the list to build the initial plots
     const firstPhenotype = phenotypes[0];
-    // const firstPhenoDescription = d3.json(`/manifest/${firstPhenotype}`).then((data) => data['Phenotype Description'][0]);
+    // const firstPhenoDescription = d3.json(`/${firstPhenotype}`).then((data) => data['Phenotype Description'][0]);
     // console.log(firstPhenoDescription);
     const startingChr = 1;
-    const startingPos = 205874574;
-    const endingPos = 205920191;
+    const startingPos = 692794;
+    const endingPos = 941539;
 
     var url = `${firstPhenotype}/${startingChr}/${startingPos}/${endingPos}`;
     d3.json(url).then(function(response) {
