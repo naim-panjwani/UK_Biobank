@@ -22,7 +22,7 @@
       <div class="col-md-3">
         <div class="well">
           <h5>SELECT Phenotype:</h5>
-          <select id="selDataset" onchange="optionChanged(this.value)"></select>
+          <select id="selDataset"></select>
         </div>
         <form>
           <div class="form-group">
@@ -31,6 +31,7 @@
           </div>
           <button id="submit-btn" type="submit" class="btn btn-default">Submit</button>
         </form>
+        <div id="error-messages" class="error-text"></div>
       </div>
       <div class="col-md-9">
         <div id="plot"></div>

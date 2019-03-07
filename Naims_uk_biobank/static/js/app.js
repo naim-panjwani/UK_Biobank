@@ -1,33 +1,75 @@
+
+var submitButton = d3.select("#submit-btn")
+
+function getPhenotypeDescription(phenotype) {
+  console.log(phenotype);
+  var url = `phenotype/${phenotype}`
+  var descr;
+
+  d3.json(url).then(response => {
+    response.description[0];
+  });
+}
+
 function buildPlot(phenotype, chr, startbp, endbp) {
 
   var url = `assoc/${phenotype}/${chr}/${startbp}/${endbp}`;
   d3.json(url).then(response => {
-
-    //if (error) throw error;
-
     data = response;
-    console.log(data)
+    // console.log(data)
     var myx = data.pos;
     var myy = data.pval;
-    console.log(myx);
-    console.log(myy);
+    // console.log(myx);
+    // console.log(myy);
     var mylogy = myy.map(p => -Math.log10(p));
-    console.log(mylogy);
-    var myyx = data.pval
-    var data = [{
-      x: data.pos,
-      y: mylogy,
-      mode: 'markers',
-      type: 'scatter',
-      text: data.variant,
-      hoverinfo: 'x+y+text+value'
-    }];
-    
-    var layout = {
-      title: `Association Summary`
-    };
-    
-    Plotly.newPlot('plot', data, layout);
+    // console.log(mylogy);
+    var chromText = "";
+    if(chr === 23) {chromText="X"} else {chromText=chr.toString()}
+    var metadata = data.rsid;
+    d3.json(`phenotype/${phenotype}`).then(phenoresponse => {
+      var phenodesc = phenoresponse.description[0];
+
+      var data = [{
+        x: myx,
+        y: mylogy,
+        mode: 'markers',
+        type: 'scatter',
+        text: metadata,
+        hoverinfo: 'x+y+text+value'
+      }];
+      
+      var layout = {
+        title: {
+          text: `Association Summary<br>${phenodesc}`,
+          font: {
+            family: 'Courier New, monospace',
+            size: 24
+          },
+        },
+        xaxis: {
+          title: {
+            text: `chr${chromText} genomic region`,
+            font: {
+              family: 'Courier New, monospace',
+              size: 18,
+              color: '#7f7f7f'
+            }
+          },
+        },
+        yaxis: {
+          title: {
+            text: `-log10(p-value)`,
+            font: {
+              family: 'Courier New, monospace',
+              size: 18,
+              color: '#7f7f7f'
+            }
+          }
+        }
+      };
+      
+      Plotly.newPlot('plot', data, layout);
+    });
   });
 }
 
@@ -51,20 +93,46 @@ function init() {
     const startingChr = 1;
     const startingPos = 700000;
     const endingPos = 800000;
-    buildPlot(firstPhenotype, startingChr, startingPos, endingPos)
-    // buildTable(data);
+    buildPlot(firstPhenotype, startingChr, startingPos, endingPos);
+    // buildTable(firstPhenotype, startingChr, startingPos, endingPos);
   });
 }
 
 
-function optionChanged(newPhenotype) {
-  // filterButton.on("click", function() {
-  //   d3.event.preventDefault();
+// Listen for submit event
+submitButton.on("click", function() {
+  d3.event.preventDefault();
+  
+  // Get new phenotype (if applicable)
+  var selector = d3.select("#selDataset");
+  var pheno = selector.property("value");
+  var errorDiv = d3.select("#error-messages")
+
+  // Clear any error messages
+  errorDiv.text("")
+
+  // Get locus input
+  var locusInput = d3.select("#locus").property("value");
+  if(locusInput) {
+    var chrom = parseInt(locusInput.split(":",1));
+    var startbase = parseInt(locusInput.split('-')[0].split(":")[1]);
+    var endbase = parseInt(locusInput.split('-')[1]);
     
-  //   // Get loucs input
-  //   var locusInput = d3.select("#locus").property("value");
-  // }
-}
+    if(chrom && startbase && endbase) {
+      if((endbase - startbase) > 100000) {
+        errorDiv.text("Please query a genomic region less than 100kbp")
+      } else if (startbase > endbase) {
+        errorDiv.text("Starting position is greater than ending position")
+      } else {
+        buildPlot(pheno, chrom, startbase, endbase);
+      }
+      // buildTable(pheno, chrom, startbase, endbase)
+    } else {
+      errorDiv.text("Please enter a genomic region")
+    }
+  }
+  
+});
 
 // Initialize the dashboard
 init();

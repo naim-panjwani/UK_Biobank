@@ -52,7 +52,7 @@ except:
     pass
 
 conn = db.engine.connect()
-session = Session(db.engine) # can't use as tables don't get reflected
+session = Session(db.engine)
 
 @app.route("/")
 def index():
@@ -88,7 +88,7 @@ def phenoAssocResults(phenotype, chr, startbp, endbp):
 
     # Use Pandas to perform the sql query
     if ((int(endbp) - int(startbp) > 100000) or (int(startbp) > int(endbp))):
-        return "Please query a genomic region less than 100kbp"
+        return render_template("invalid_input.html")
     else:
         # Small problem here in that the phenotype table names start with an integer, 
         # and so the class is inaccessible
@@ -99,27 +99,27 @@ def phenoAssocResults(phenotype, chr, startbp, endbp):
         , `variants`.`pos`
         #, `variants`.`ref`
         #, `variants`.`alt`
-        #, `variants`.`rsid`
-        #, `variants`.`consequence`
-        #, `variants`.`consequence_category`
+        , `variants`.`rsid`
+        , `variants`.`consequence`
+        , `variants`.`consequence_category`
         #, `variants`.`info`
         #, `variants`.`call_rate`
         #, `variants`.`AC`
-        #, `variants`.`minor_AF`
+        , `variants`.`minor_AF`
         #, `variants`.`minor_allele`
         #, `variants`.`n_hom_ref`
         #, `variants`.`n_het`
         #, `variants`.`n_hom_var`
         #,`{phenotype}`.`low_confidence_variant`
         #,`{phenotype}`.`ytx`
-        #,`{phenotype}`.`beta`
+        ,`{phenotype}`.`beta`
         #,`{phenotype}`.`se`
         #,`{phenotype}`.`tstat`
         ,`{phenotype}`.`pval`
         from `uk_biobank`.`variants`
         inner join `uk_biobank`.`{phenotype}`
         on `variants`.`variant` = `{phenotype}`.`variant`
-        where `variants`.`chr` = {chr} and `variants`.`pos` >= {startbp} and `variants`.`pos` <= {endbp};""")
+        where `variants`.`chr` = {chr} and `variants`.`pos` >= {startbp} and `variants`.`pos` <= {endbp} and `{phenotype}`.`low_confidence_variant` <> 1;""")
         
         df = pd.read_sql_query(stmt, conn)
         df.dropna(subset=['pval', 'chr', 'pos'], inplace=True)
@@ -132,9 +132,8 @@ def variantDetails(chr, startbp, endbp):
     """Return the data in variants table for region chr:startbp-endbp."""
 
     # Use Pandas to perform the sql query
-    # Note: can't do it via a session.query as the tables are not reflecting on Base
     if ((int(endbp) - int(startbp) > 100000) or (int(startbp) > int(endbp))):
-        return "Please query a genomic region less than 100kbp"
+        return render_template("invalid_input.html")
     else:
         stmt = session.query(Variants).\
             filter(Variants.chr == chr).\
