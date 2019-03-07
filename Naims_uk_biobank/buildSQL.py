@@ -121,8 +121,8 @@ if "variants" not in tables:
                                         chr.append(chrrow)
                 chunk['chr'] = chr
                 chunk.set_index(['chr','pos','ref','alt', 'variant'], inplace=True)
-                chunk.to_sql(name="variants", if_exists='append', index=True, index_label=['chr','pos','ref','alt', 'variant'], 
-                        con=engine, dtype={'ref': String(512), 'alt': String(512), 'variant': String(512)})
+                chunk.to_sql(name="variants", if_exists='append', index=True, index_label=['chr','pos','ref','alt', 'variant', 'rsid'], 
+                        con=engine, dtype={'ref': String(512), 'alt': String(512), 'variant': String(512), 'rsid': String(50)})
                 break
         engine.execute("ALTER TABLE `uk_biobank`.`variants` add primary key(chr, pos, ref(50), alt(50));")
 
