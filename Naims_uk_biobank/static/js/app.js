@@ -1,18 +1,34 @@
-function buildPlot(data) {
-  var data = [{
-    x: data.map(row => row.pos),
-    y: data.map(row => -Math.log10(row.pval)),
-    mode: 'markers',
-    type: 'scatter',
-    text: data.map(row => row.variant),
-    hoverinfo: 'x+y+text+value'
-  }];
-  
-  var layout = {
-    title: `Association Summary`
-  };
-  
-  Plotly.newPlot('plot', data, layout);
+function buildPlot(phenotype, chr, startbp, endbp) {
+
+  var url = `assoc/${phenotype}/${chr}/${startbp}/${endbp}`;
+  d3.json(url).then(response => {
+
+    //if (error) throw error;
+
+    data = response;
+    console.log(data)
+    var myx = data.pos;
+    var myy = data.pval;
+    console.log(myx);
+    console.log(myy);
+    var mylogy = myy.map(p => -Math.log10(p));
+    console.log(mylogy);
+    var myyx = data.pval
+    var data = [{
+      x: data.pos,
+      y: mylogy,
+      mode: 'markers',
+      type: 'scatter',
+      text: data.variant,
+      hoverinfo: 'x+y+text+value'
+    }];
+    
+    var layout = {
+      title: `Association Summary`
+    };
+    
+    Plotly.newPlot('plot', data, layout);
+  });
 }
 
 function init() {
@@ -33,41 +49,13 @@ function init() {
     // const firstPhenoDescription = d3.json(`/${firstPhenotype}`).then((data) => data['Phenotype Description'][0]);
     // console.log(firstPhenoDescription);
     const startingChr = 1;
-    const startingPos = 692794;
-    const endingPos = 941539;
-
-    var url = `${firstPhenotype}/${startingChr}/${startingPos}/${endingPos}`;
-    d3.json(url).then(function(response) {
-      data = response;
-      
-      // buildPlot(data);
-      var myx = data.pos;
-      var myy = data.pval;
-      console.log(myx);
-      console.log(myy);
-      var mylogy = myy.map(p => -Math.log10(p));
-      console.log(mylogy);
-      var myyx = data.pval
-      var data = [{
-        x: data.pos,
-        y: mylogy,
-        mode: 'markers',
-        type: 'scatter',
-        text: data.variant,
-        hoverinfo: 'x+y+text+value'
-      }];
-      
-      var layout = {
-        title: `Association Summary`
-      };
-      
-      Plotly.newPlot('plot', data, layout);
-
-
-      // buildTable(data);
-    });
+    const startingPos = 700000;
+    const endingPos = 800000;
+    buildPlot(firstPhenotype, startingChr, startingPos, endingPos)
+    // buildTable(data);
   });
 }
+
 
 function optionChanged(newPhenotype) {
   // filterButton.on("click", function() {

@@ -63,7 +63,7 @@ def index():
 def getAvailablePhenotypes():
     return jsonify(pheno_tables)
 
-@app.route("/<variant>")
+@app.route("/variant/<variant>")
 def getVariantMetaData(variant):
     """Return one SNP's metadata"""
 
@@ -74,7 +74,7 @@ def getVariantMetaData(variant):
     # Format the data to send as json
     return jsonify(df.to_dict(orient='list'))
 
-@app.route("/<phenotype>")
+@app.route("/phenotype/<phenotype>")
 def getPhenotypeDetails(phenotype):
     phenocode = phenotype.split("_")[0] + "_" + phenotype.split("_")[1]
     #sex = "_".join(phenotype.split("_")[2:])
@@ -82,63 +82,66 @@ def getPhenotypeDetails(phenotype):
     df = pd.read_sql_query(stmt, conn)
     return jsonify(df.to_dict(orient="list"))
 
-@app.route("/<phenotype>/<chr>/<startbp>/<endbp>")
+@app.route("/assoc/<phenotype>/<chr>/<startbp>/<endbp>")
 def phenoAssocResults(phenotype, chr, startbp, endbp):
     """Return the association results for phenotype at chr:startbp-endbp."""
 
     # Use Pandas to perform the sql query
-    if (int(endbp) - int(startbp) > 2000000 or int(startbp) > int(endbp)):
-        return "Please query a genomic region less than 2Mbp"
+    if ((int(endbp) - int(startbp) > 100000) or (int(startbp) > int(endbp))):
+        return "Please query a genomic region less than 100kbp"
     else:
         # Small problem here in that the phenotype table names start with an integer, 
         # and so the class is inaccessible
         # (eg. get invalid token error for 3064_irnt_both_sexes when doing 
         # Base.classes.3064_irnt_both_sexes or rather exec(f"Base.classes.{phenotype}"))
-        stmt = (f"""select `variants`.`chr`
-                        , `variants`.`pos`
-                        , `variants`.`ref`
-                        , `variants`.`alt`
-                        , `variants`.`rsid`
-                        , `variants`.`consequence`
-                        , `variants`.`consequence_category`
-                        , `variants`.`info`
-                        , `variants`.`call_rate`
-                        , `variants`.`AC`
-                        , `variants`.`minor_AF`
-                        , `variants`.`minor_allele`
-                        , `variants`.`n_hom_ref`
-                        , `variants`.`n_het`
-                        , `variants`.`n_hom_var`
-                        ,`{phenotype}`.`low_confidence_variant`
-                        ,`{phenotype}`.`ytx`
-                        ,`{phenotype}`.`beta`
-                        ,`{phenotype}`.`se`
-                        ,`{phenotype}`.`tstat`
-                        ,`{phenotype}`.`pval`
-                        from `uk_biobank`.`variants`
-                        inner join `uk_biobank`.`{phenotype}`
-                        on `variants`.`variant` = `{phenotype}`.`variant`
-                        where `variants`.`chr` = {chr} and `variants`.`pos` >= {startbp} and `variants`.`pos` <= {endbp};""")
+        stmt = (f"""select `variants`.`variant`
+        , `variants`.`chr`
+        , `variants`.`pos`
+        #, `variants`.`ref`
+        #, `variants`.`alt`
+        #, `variants`.`rsid`
+        #, `variants`.`consequence`
+        #, `variants`.`consequence_category`
+        #, `variants`.`info`
+        #, `variants`.`call_rate`
+        #, `variants`.`AC`
+        #, `variants`.`minor_AF`
+        #, `variants`.`minor_allele`
+        #, `variants`.`n_hom_ref`
+        #, `variants`.`n_het`
+        #, `variants`.`n_hom_var`
+        #,`{phenotype}`.`low_confidence_variant`
+        #,`{phenotype}`.`ytx`
+        #,`{phenotype}`.`beta`
+        #,`{phenotype}`.`se`
+        #,`{phenotype}`.`tstat`
+        ,`{phenotype}`.`pval`
+        from `uk_biobank`.`variants`
+        inner join `uk_biobank`.`{phenotype}`
+        on `variants`.`variant` = `{phenotype}`.`variant`
+        where `variants`.`chr` = {chr} and `variants`.`pos` >= {startbp} and `variants`.`pos` <= {endbp};""")
         
         df = pd.read_sql_query(stmt, conn)
+        df.dropna(subset=['pval', 'chr', 'pos'], inplace=True)
 
         # Format the data to send as json
         return jsonify(df.to_dict(orient='list'))
 
-@app.route("/<chr>/<startbp>/<endbp>")
+@app.route("/variantAt/<chr>/<startbp>/<endbp>")
 def variantDetails(chr, startbp, endbp):
     """Return the data in variants table for region chr:startbp-endbp."""
 
     # Use Pandas to perform the sql query
     # Note: can't do it via a session.query as the tables are not reflecting on Base
-    if (int(endbp) - int(startbp) > 2000000 or int(startbp) > int(endbp)):
-        return "Please query a genomic region less than 2Mbp"
+    if ((int(endbp) - int(startbp) > 100000) or (int(startbp) > int(endbp))):
+        return "Please query a genomic region less than 100kbp"
     else:
         stmt = session.query(Variants).\
             filter(Variants.chr == chr).\
                 filter(Variants.pos >= startbp).\
                     filter(Variants.pos <= endbp).statement
         df = pd.read_sql_query(stmt, conn)
+        df.dropna(inplace=True)
 
         # Format the data to send as json
         return jsonify(df.to_dict(orient='list'))
