@@ -13,6 +13,9 @@ from sqlalchemy.orm import Session
 from sqlalchemy import create_engine, inspect, String
 import pymysql
 pymysql.install_as_MySQLdb()
+#import pwd
+
+thepwd = list(pd.read_csv('pwd.txt').columns)[0]
 
 def download(url, filename):
     u = urllib.request.urlopen(url)
@@ -98,10 +101,7 @@ else:
 
 # Initialize MySQL database in chunks (taking small chunks for now as proof of concept for the app):
 #engine = sa.create_engine('mysql://root:root@127.0.0.1/uk_biobank')
-#ca_path = os.path.join("C:/","ssl","BaltimoreCyberTrustRoot.crt.pem")
-#cnx = mysql.connector.connect(user="naimpanjwani@ukbiobankmysql", password="jGw^b7$PgrdT", host="ukbiobankmysql.mysql.database.azure.com", port=3306, database="ukbiobankmysql")
-# ssl_args = {'ssl_ca': ca_path}
-engine = sa.create_engine('mysql://naimpanjwani@ukbiobankmysql:jGw^b7$PgrdT@ukbiobankmysql.mysql.database.azure.com:3306/uk_biobank')
+engine = sa.create_engine('mysql://naimpanjwani@ukbiobankmysql:%s@ukbiobankmysql.mysql.database.azure.com:3306/uk_biobank' % thepwd)
 inspector = inspect(engine)
 tables = inspector.get_table_names()
 print(tables)
@@ -109,8 +109,19 @@ print(tables)
 # for column in columns:
 #     print(column["name"], column["type"])
 
+
+if "phenotypes_both_sexes" not in tables:
+        print("Creating and pushing data to \'phenotypes_both_sexes\' table")
+        pheno_df = pd.read_csv("phenotypes.both_sexes.tsv.bgz", compression="gzip", sep="\t")
+        pheno_df.set_index(['phenotype'], inplace=True)
+        pheno_df.to_sql(name="phenotypes_both_sexes", index=True, index_label='phenotype', con=engine, dtype={'phenotype': String(100)})
+        print("phenotyes_both_sexes table push complete; now adding primary key for phenotype(100) column")
+        engine.execute("ALTER TABLE `uk_biobank`.`phenotypes_both_sexes` add primary key(phenotype(100));")
+
+
 if "variants" not in tables:
-        chunks = pd.read_csv("variants.tsv.bgz", compression="gzip", sep="\t", chunksize=100000)
+        print("Creating and pushing data to \'variants\' table in chunks")
+        chunks = pd.read_csv("variants.tsv.bgz", compression="gzip", sep="\t", chunksize=10000)
         for chunk in chunks:
                 chr = []
                 for chrrow in list(chunk['chr']):
@@ -125,19 +136,17 @@ if "variants" not in tables:
                 chunk.set_index(['chr','pos','ref','alt', 'variant', 'rsid'], inplace=True)
                 chunk.to_sql(name="variants", if_exists='append', index=True, index_label=['chr','pos','ref','alt', 'variant', 'rsid'], 
                         con=engine, dtype={'ref': String(512), 'alt': String(512), 'variant': String(512), 'rsid': String(50)})
+        print("variants table push complete; now declaring primary key columns chr, pos, ref(50), alt(50)")
         engine.execute("ALTER TABLE `uk_biobank`.`variants` add primary key(chr, pos, ref(50), alt(50));")
 
-if "phenotypes_both_sexes" not in tables:
-        pheno_df = pd.read_csv("phenotypes.both_sexes.tsv.bgz", compression="gzip", sep="\t")
-        pheno_df.set_index(['phenotype'], inplace=True)
-        pheno_df.to_sql(name="phenotypes_both_sexes", index=True, index_label='phenotype', con=engine, dtype={'phenotype': String(100)})
-        engine.execute("ALTER TABLE `uk_biobank`.`phenotypes_both_sexes` add primary key(phenotype(100));")
-
 for filename in filenames:
+        print("Creating and pushing phenotype tables; each phenotype in chunks")
         if filename not in tables:
-                chunks = pd.read_csv(filename, compression='gzip', sep='\t', chunksize=100000)
+                tbl_name = filename.split(".")[0] + "_" + filename.split(".")[3]
+                print("Creating and pushing table %s" % tbl_name)
+                chunks = pd.read_csv(filename, compression='gzip', sep='\t', chunksize=10000)
                 for chunk in chunks:
-                        tbl_name = filename.split(".")[0] + "_" + filename.split(".")[3]
                         chunk.set_index(['variant'], inplace=True)
                         chunk.to_sql(name=tbl_name, if_exists='append', index=True, index_label=['variant'], con=engine, dtype={'variant': String(512)})
-                engine.execute(f"ALTER TABLE `uk_biobank`.`{tbl_name}` add primary key(variant(512));")
+                print("Finished creating table %s. Now adding primary key for variant(512) column" % tbl_name)
+                engine.execute("ALTER TABLE `uk_biobank`.`%s` add primary key(variant(512));" % tbl_name)
