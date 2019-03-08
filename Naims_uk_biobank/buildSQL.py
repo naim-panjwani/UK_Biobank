@@ -13,7 +13,6 @@ from sqlalchemy.orm import Session
 from sqlalchemy import create_engine, inspect, String
 import pymysql
 pymysql.install_as_MySQLdb()
-import mysql
 
 def download(url, filename):
     u = urllib.request.urlopen(url)
@@ -62,6 +61,7 @@ for phenotype in phenotype_list:
                         pheno_descriptions.append(ukbb_manifest_df[['Phenotype Description']].iloc[i,0])
                         sex.append(ukbb_manifest_df[['Sex']].iloc[i,0])
                         filenames.append(ukbb_manifest_df[['File']].iloc[i,0])
+
 download_urls = [url.replace('dl=0','dl=1') for url in download_urls]
 
 # Make downloads folder and download required files:
@@ -98,10 +98,10 @@ else:
 
 # Initialize MySQL database in chunks (taking small chunks for now as proof of concept for the app):
 #engine = sa.create_engine('mysql://root:root@127.0.0.1/uk_biobank')
-ca_path = os.path.join("C:/","ssl","BaltimoreCyberTrustRoot.crt.pem")
-cnx = mysql.connector.connect(user="naimpanjwani@naimsukbiobank", password="YF2izjv!", host="naimsukbiobank.mysql.database.azure.com", port=3306, database="naimsukbiobank", ssl_ca=ca_path, ssl_verify_cert=true)
+#ca_path = os.path.join("C:/","ssl","BaltimoreCyberTrustRoot.crt.pem")
+#cnx = mysql.connector.connect(user="naimpanjwani@ukbiobankmysql", password="jGw^b7$PgrdT", host="ukbiobankmysql.mysql.database.azure.com", port=3306, database="ukbiobankmysql")
 # ssl_args = {'ssl_ca': ca_path}
-# engine = sa.create_engine('mysql://naimpanjwani@naimsukbiobank:YF2izjv!@naimsukbiobank.mysql.database.azure.com:3306/naimsukbiobank', connect_args=ssl_args)
+engine = sa.create_engine('mysql://naimpanjwani@ukbiobankmysql:jGw^b7$PgrdT@ukbiobankmysql.mysql.database.azure.com:3306/uk_biobank')
 inspector = inspect(engine)
 tables = inspector.get_table_names()
 print(tables)
@@ -122,7 +122,7 @@ if "variants" not in tables:
                                 except:
                                         chr.append(chrrow)
                 chunk['chr'] = chr
-                chunk.set_index(['chr','pos','ref','alt', 'variant'], inplace=True)
+                chunk.set_index(['chr','pos','ref','alt', 'variant', 'rsid'], inplace=True)
                 chunk.to_sql(name="variants", if_exists='append', index=True, index_label=['chr','pos','ref','alt', 'variant', 'rsid'], 
                         con=engine, dtype={'ref': String(512), 'alt': String(512), 'variant': String(512), 'rsid': String(50)})
         engine.execute("ALTER TABLE `uk_biobank`.`variants` add primary key(chr, pos, ref(50), alt(50));")
@@ -139,7 +139,5 @@ for filename in filenames:
                 for chunk in chunks:
                         tbl_name = filename.split(".")[0] + "_" + filename.split(".")[3]
                         chunk.set_index(['variant'], inplace=True)
-                        chunk.to_sql(name=tbl_name, if_exists='append', index=True, index_label=['variant'], con=engine, dtype={'variant': String(512)}) # push this chunk to sql
-                engine.execute(f"""ALTER TABLE `uk_biobank`.`{tbl_name}` add primary key(variant(512));""")
-
-
+                        chunk.to_sql(name=tbl_name, if_exists='append', index=True, index_label=['variant'], con=engine, dtype={'variant': String(512)})
+                engine.execute(f"ALTER TABLE `uk_biobank`.`{tbl_name}` add primary key(variant(512));")
