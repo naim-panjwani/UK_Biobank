@@ -14,7 +14,7 @@ from flask import Flask, jsonify, render_template
 from flask_sqlalchemy import SQLAlchemy
 import pymysql
 pymysql.install_as_MySQLdb()
-thepwd = list(pd.read_csv('pwd.txt').columns)[0]
+thepwd = open('pwd.txt').readline().replace('\n', '')
 
 app = Flask(__name__)
 genomicWindowLimit = 2000000
