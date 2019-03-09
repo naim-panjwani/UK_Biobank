@@ -1,1 +1,1 @@
-web: gunicorn: naimsukbiobank.app : app
+web: gunicorn naimsukbiobank.app:app
