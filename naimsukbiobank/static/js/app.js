@@ -40,7 +40,7 @@ function buildPlot(data, phenodesc) {
       text: `Association Summary<br>${phenodesc}`,
       font: {
         family: 'Courier New, monospace',
-        size: 24
+        size: 14
       },
     },
     xaxis: {
@@ -131,7 +131,8 @@ function showData(phenotype, chr, startbp, endbp) {
   d3.json(url).then(response => {
     data = response;
     d3.json(`phenotype/${phenotype}`).then(phenoresponse => {
-      var phenodesc = phenoresponse.description[0];
+      var phenodesc = phenoresponse.Phenotype_description[0];
+      console.log(phenodesc);
       buildPlot(data, phenodesc);
       buildTable(data);
     });

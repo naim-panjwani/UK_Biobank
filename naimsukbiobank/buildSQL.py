@@ -138,9 +138,11 @@ if "variants" not in tables:
         print("variants table push complete; now declaring primary key columns chr, pos, ref(50), alt(50)")
         engine.execute("ALTER TABLE `uk_biobank`.`variants` add primary key(chr, pos, ref(50), alt(50));")
 
+tbl_names = []
+print("Creating and pushing phenotype tables; each phenotype in chunks")
 for filename in filenames:
-        print("Creating and pushing phenotype tables; each phenotype in chunks")
         tbl_name = filename.split(".")[0] + "_" + filename.split(".")[3]
+        tbl_names.append(tbl_name)
         if tbl_name not in tables:                
                 print("Creating and pushing table %s" % tbl_name)
                 chunks = pd.read_csv(filename, compression='gzip', sep='\t', chunksize=10000)
@@ -149,3 +151,14 @@ for filename in filenames:
                         chunk.to_sql(name=tbl_name, if_exists='append', index=True, index_label=['variant'], con=engine, dtype={'variant': String(512)})
                 print("Finished creating table %s. Now adding primary key for variant(512) column" % tbl_name)
                 engine.execute("ALTER TABLE `uk_biobank`.`%s` add primary key(variant(512));" % tbl_name)
+
+uk_biobank_phenotables = pd.DataFrame({
+        'Phenocode': phenocodes,
+        'Phenotype_description': pheno_descriptions,
+        'Table_name': tbl_names,
+        'Sex': sex,
+        'Filename': filenames
+})
+uk_biobank_phenotables.set_index(['Table_name'], inplace=True)
+uk_biobank_phenotables.to_sql(name='phenotype_tables_added', if_exists='replace', index_label=['Table_name'], con=engine, dtype={'Table_name': String(100)})
+engine.execute("ALTER TABLE `uk_biobank`.`phenotype_tables_added` add primary key(Table_name(100));")

@@ -36,7 +36,7 @@ Base.prepare(db.engine, reflect=True)
 # Base.metadata.tables
 Base.classes.keys()
 Variants = Base.classes.variants
-Phenotypes = Base.classes.phenotypes_both_sexes
+Phenotypes = Base.classes.phenotype_tables_added
 
 #metadata = sqlalchemy.MetaData(bind=db.engine)
 
@@ -45,6 +45,7 @@ pheno_tables = inspector.get_table_names()
 try:
     pheno_tables.remove('variants')
     pheno_tables.remove('phenotypes_both_sexes')
+    pheno_tables.remove('phenotype_tables_added')
 except:
     pass
 
@@ -73,9 +74,8 @@ def getVariantMetaData(variant):
 
 @app.route("/phenotype/<phenotype>")
 def getPhenotypeDetails(phenotype):
-    phenocode = phenotype.split("_")[0] + "_" + phenotype.split("_")[1]
     #sex = "_".join(phenotype.split("_")[2:])
-    stmt = session.query(Phenotypes).filter(Phenotypes.phenotype == phenocode).statement
+    stmt = session.query(Phenotypes.Phenotype_description).filter(Phenotypes.Table_name == phenotype).statement
     df = pd.read_sql_query(stmt, conn)
     return jsonify(df.to_dict(orient="list"))
 
