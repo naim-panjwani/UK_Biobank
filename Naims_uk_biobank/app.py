@@ -1,6 +1,3 @@
-############################################################################
-# 
-############################################################################
 
 import os
 
@@ -17,16 +14,16 @@ from flask import Flask, jsonify, render_template
 from flask_sqlalchemy import SQLAlchemy
 import pymysql
 pymysql.install_as_MySQLdb()
-
+thepwd = list(pd.read_csv('pwd.txt').columns)[0]
 
 app = Flask(__name__)
-
+genomicWindowLimit = 2000000
 
 #################################################
 # Database Setup
 #################################################
 
-app.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:root@127.0.0.1/uk_biobank"
+app.config["SQLALCHEMY_DATABASE_URI"] = ("mysql://naimpanjwani@ukbiobankmysql:%s@ukbiobankmysql.mysql.database.azure.com:3306/uk_biobank" % thepwd)
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False # to disable tracking by flask of SQLAlchemy session modifications
 db = SQLAlchemy(app)
 
@@ -87,15 +84,14 @@ def phenoAssocResults(phenotype, chr, startbp, endbp):
     """Return the association results for phenotype at chr:startbp-endbp."""
 
     # Use Pandas to perform the sql query
-    if ((int(endbp) - int(startbp) > 100000) or (int(startbp) > int(endbp))):
+    if ((int(endbp) - int(startbp) > genomicWindowLimit) or (int(startbp) > int(endbp))):
         return render_template("invalid_input.html")
     else:
         # Small problem here in that the phenotype table names start with an integer, 
         # and so the class is inaccessible
         # (eg. get invalid token error for 3064_irnt_both_sexes when doing 
         # Base.classes.3064_irnt_both_sexes or rather exec(f"Base.classes.{phenotype}"))
-        stmt = (f"""select `variants`.`variant`
-        , `variants`.`chr`
+        stmt = (f"""select `variants`.`chr`
         , `variants`.`pos`
         #, `variants`.`ref`
         #, `variants`.`alt`
@@ -132,7 +128,7 @@ def variantDetails(chr, startbp, endbp):
     """Return the data in variants table for region chr:startbp-endbp."""
 
     # Use Pandas to perform the sql query
-    if ((int(endbp) - int(startbp) > 100000) or (int(startbp) > int(endbp))):
+    if ((int(endbp) - int(startbp) > genomicWindowLimit) or (int(startbp) > int(endbp))):
         return render_template("invalid_input.html")
     else:
         stmt = session.query(Variants).\

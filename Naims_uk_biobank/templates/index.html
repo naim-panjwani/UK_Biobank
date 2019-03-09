@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="ie=edge">
   <title>UK Biobank Association Analyses</title>
-  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
   <link rel="stylesheet" type="text/css" href="../static/css/style.css">
 </head>
 
@@ -22,11 +22,11 @@
       <div class="col-md-3">
         <div class="well">
           <h5>SELECT Phenotype:</h5>
-          <select id="selDataset"></select>
+          <select id="selDataset" onchange="optionChanged(this.value)"></select>
         </div>
         <form>
           <div class="form-group">
-            <label for="region">Enter a Locus</label>
+            <label for="region" id="locusText"></label>
             <input class="form-control" id="locus" type="text" placeholder="1:700000-800000">
           </div>
           <button id="submit-btn" type="submit" class="btn btn-default">Submit</button>
@@ -37,10 +37,25 @@
         <div id="plot"></div>
       </div>
     </div>
-  </div>
   <div class="row">
-    <div class="col-md-12">
-      <div id="summTable"></div>
+    <div class="col-md-11">
+      <div id="table-area" class="">
+        <table id="variants-table" class="table table-striped table-bordered table-sm sortable" cellspacing="0" width="100%">
+          <thead>
+            <tr>
+              <th class="th-sm">Chromosome</th>
+              <th class="th-sm">Position</th>
+              <th class="th-sm">rs ID</th>
+              <th class="th-sm">MAF</th>
+              <th class="th-sm">Consequence</th>
+              <th class="th-sm">Consequence category</th>
+              <th class="th-sm">Beta</th>
+              <th class="th-sm">P-value</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
     </div>
   </div>
 

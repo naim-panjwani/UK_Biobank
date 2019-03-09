@@ -28,23 +28,22 @@ ukbb_manifest_file = os.path.join(".", "UKBB GWAS Imputed v3 - File Manifest Rel
 ukbb_manifest_df = pd.read_csv(ukbb_manifest_file, sep='\t', encoding='utf-8')
 ukbb_manifest_df = ukbb_manifest_df.dropna()
 phenotype_list = [
-#        "3062"
-#        ,"3063"
-        "3064"
-#        ,"20150"
-#        ,"20153"
-#        ,"20154"
-#        ,"20002_1115"
-#        ,"22127"
-#        ,"22128"
-#        ,"22129"
-#        ,"22130"
-#        ,"22133"
-#        ,"22134"
-#        ,"22135"
-#        ,"22137"
-#        ,"22502"
-#        ,"22504"
+        "3062"
+        ,"3063"
+        ,"3064"
+        ,"20150"
+        #,"20153"
+        ,"20154"
+        #,"20002_1115"
+        ,"22127"
+        #,"22128"
+        #,"22129"
+        ,"22130"
+        #,"22133"
+        #,"22134"
+        #,"22137"
+        ,"22502"
+        ,"22504"
 ]
 
 # Get the download URLs:
@@ -141,8 +140,8 @@ if "variants" not in tables:
 
 for filename in filenames:
         print("Creating and pushing phenotype tables; each phenotype in chunks")
-        if filename not in tables:
-                tbl_name = filename.split(".")[0] + "_" + filename.split(".")[3]
+        tbl_name = filename.split(".")[0] + "_" + filename.split(".")[3]
+        if tbl_name not in tables:                
                 print("Creating and pushing table %s" % tbl_name)
                 chunks = pd.read_csv(filename, compression='gzip', sep='\t', chunksize=10000)
                 for chunk in chunks:
