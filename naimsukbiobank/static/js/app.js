@@ -9,7 +9,7 @@ d3.select("#locusText").text(`Enter Genomic Coordinates (window limit: ${genomic
 d3.select("#locus").attr('placeholder', `${startingChr}:${startingPos}-${endingPos}`);
 
 function getPhenotypeDescription(phenotype) {
-  console.log(phenotype);
+  //console.log(phenotype);
   var url = `phenotype/${phenotype}`
   var descr;
 
@@ -132,7 +132,7 @@ function showData(phenotype, chr, startbp, endbp) {
     data = response;
     d3.json(`phenotype/${phenotype}`).then(phenoresponse => {
       var phenodesc = phenoresponse.Phenotype_description[0];
-      console.log(phenodesc);
+      //console.log(phenodesc);
       buildPlot(data, phenodesc);
       buildTable(data);
     });
