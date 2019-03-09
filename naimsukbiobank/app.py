@@ -14,7 +14,7 @@ from flask import Flask, jsonify, render_template
 from flask_sqlalchemy import SQLAlchemy
 import pymysql
 pymysql.install_as_MySQLdb()
-thepwd = open('pwd.txt').readline().replace('\n', '')
+#thepwd = open('pwd.txt').readline().replace('\n', '')
 
 app = Flask(__name__)
 genomicWindowLimit = 2000000
@@ -23,7 +23,7 @@ genomicWindowLimit = 2000000
 # Database Setup
 #################################################
 
-app.config["SQLALCHEMY_DATABASE_URI"] = ("mysql://naimpanjwani@ukbiobankmysql:%s@ukbiobankmysql.mysql.database.azure.com:3306/uk_biobank" % thepwd)
+app.config["SQLALCHEMY_DATABASE_URI"] = ("mysql://naimpanjwani@ukbiobankmysql:jGw^b7$PgrdT@ukbiobankmysql.mysql.database.azure.com:3306/uk_biobank")
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False # to disable tracking by flask of SQLAlchemy session modifications
 db = SQLAlchemy(app)
 
