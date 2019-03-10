@@ -23,48 +23,54 @@ function buildPlot(data, phenodesc) {
   var myy = data.pval;
   var mylogy = myy.map(p => -Math.log10(p));
   var metadata = data.rsid;
-  var chr = data.chr[0];
+  var chr = data.chr[0];  
   var chromText = "";
-  if(chr === 23) {chromText="X"} else {chromText=chr.toString()}
-  var data = [{
-    x: myx,
-    y: mylogy,
-    mode: 'markers',
-    type: 'scatter',
-    text: metadata,
-    hoverinfo: 'x+y+text+value'
-  }];
-  
-  var layout = {
-    title: {
-      text: `Association Summary<br>${phenodesc}`,
-      font: {
-        family: 'Courier New, monospace',
-        size: 14
-      },
-    },
-    xaxis: {
+  console.log(`chr: ${chr}`);
+  if(typeof chr === 'undefined') {
+    errorDiv.text("Region input likely out of bounds");
+  } else {
+    if(chr === 23) {chromText="X"} else {chromText=chr.toString()}
+    console.log(`chromText`);
+    var data = [{
+      x: myx,
+      y: mylogy,
+      mode: 'markers',
+      type: 'scatter',
+      text: metadata,
+      hoverinfo: 'x+y+text+value'
+    }];
+    
+    var layout = {
       title: {
-        text: `chr${chromText} genomic region`,
+        text: `Association Summary<br>${phenodesc}`,
         font: {
           family: 'Courier New, monospace',
-          size: 18,
-          color: '#7f7f7f'
-        }
+          size: 14
+        },
       },
-    },
-    yaxis: {
-      title: {
-        text: `-log10(p-value)`,
-        font: {
-          family: 'Courier New, monospace',
-          size: 18,
-          color: '#7f7f7f'
+      xaxis: {
+        title: {
+          text: `chr${chromText} genomic region`,
+          font: {
+            family: 'Courier New, monospace',
+            size: 18,
+            color: '#7f7f7f'
+          }
+        },
+      },
+      yaxis: {
+        title: {
+          text: `-log10(p-value)`,
+          font: {
+            family: 'Courier New, monospace',
+            size: 18,
+            color: '#7f7f7f'
+          }
         }
       }
-    }
-  };
-  Plotly.newPlot('plot', data, layout);
+    };
+    Plotly.newPlot('plot', data, layout);
+  }
 }
 
 function buildTable(data) {
