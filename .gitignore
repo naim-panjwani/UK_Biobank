@@ -106,5 +106,5 @@ venv.bak/
 # vscode
 .vscode/
 
-Naims_uk_biobank/downloads/
-Naims_uk_biobank/pwd.py
+naimsukbiobank/downloads/
+naimsukbiobank/pwd.py
