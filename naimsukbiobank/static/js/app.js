@@ -4,6 +4,7 @@ const endingPos = 206000000;
 const genomicWindowLimit = 2e6;
 var submitButton = d3.select("#submit-btn");
 var errorDiv = d3.select("#error-messages");
+var theTable = d3.select("#variants-table");
 
 d3.select("#locusText").text(`Enter Genomic Coordinates (window limit: ${genomicWindowLimit/1e6} Mbp)`);
 d3.select("#locus").attr('placeholder', `${startingChr}:${startingPos}-${endingPos}`);
@@ -25,12 +26,10 @@ function buildPlot(data, phenodesc) {
   var metadata = data.rsid;
   var chr = data.chr[0];  
   var chromText = "";
-  console.log(`chr: ${chr}`);
   if(typeof chr === 'undefined') {
     errorDiv.text("Region input likely out of bounds");
   } else {
     if(chr === 23) {chromText="X"} else {chromText=chr.toString()}
-    console.log(`chromText`);
     var data = [{
       x: myx,
       y: mylogy,
@@ -73,7 +72,9 @@ function buildPlot(data, phenodesc) {
   }
 }
 
+
 function buildTable(data) {
+  // console.log(data);
   var tbody = d3.select("#variants-table").select("tbody");
   
   // Clear table:
@@ -89,10 +90,42 @@ function buildTable(data) {
       row.append('td').text(data[desired_columns[j]][i]);
     }
   }
+  $(document).ready(function () {
+    $('#variants-table').DataTable();
+    $('.dataTables_length').addClass('bs-select');
+  });
+
+  
+
+  function zip(arrays) {
+    return arrays[0].map(function(_,i){
+      return arrays.map(function(array){return array[i]})
+      });
+  }
+  zipped_data = zip([data.chr, data.pos, data.rsid, data.minor_AF, data.consequence, data.consequence_category, data.beta, data.pval]);
+  data_objects = [];
+  for(var i = 0; i < zipped_data.length; i++) {
+      data_objects.push({
+        'chr': zipped_data[i][0],
+        'pos': zipped_data[i][1],
+        'rsid': zipped_data[i][2],
+        'minor_AF': zipped_data[i][3],
+        'consequence': zipped_data[i][4],
+        'consequence_category': zipped_data[i][5],
+        'beta': zipped_data[i][6],
+        'pval': zipped_data[i][7]
+      })
+  }
+  // console.log(data_objects);
+
+  // data_objects.sort(function (a, b) {
+  //   return b.sample_values - a.sample_values;
+  // });
+  // var top10 = response_objects.slice(0,10);
 
   // var sortAscending = true;
   // var titles = desired_columns;
-  // var headers = table.append('thead').append('tr')
+  // var headers = theTable.append('thead').append('tr')
   //                  .selectAll('th')
   //                  .data(titles).enter()
   //                  .append('th')
@@ -103,18 +136,36 @@ function buildTable(data) {
   //                    headers.attr('class', 'header');
                      
   //                    if (sortAscending) {
-  //                      rows.sort(function(a, b) { return b[d] < a[d]; });
+  //                     rows.sort(function (a, b) {
+  //                       if (a > b) {
+  //                           return 1;
+  //                       }
+  //                       if (a < b) {
+  //                           return -1;
+  //                       }
+  //                       // a must be equal to b
+  //                       return 0;
+  //                     });
   //                      sortAscending = false;
   //                      this.className = 'aes';
   //                    } else {
-  //                    rows.sort(function(a, b) { return b[d] > a[d]; });
+  //                     rows.sort(function (a, b) {
+  //                       if (a > b) {
+  //                           return 1;
+  //                       }
+  //                       if (a < b) {
+  //                           return -1;
+  //                       }
+  //                       // a must be equal to b
+  //                       return 0;
+  //                     });
   //                    sortAscending = true;
   //                    this.className = 'des';
   //                    }
                      
   //                  });
   
-  // var rows = table.append('tbody').selectAll('tr')
+  // var rows = theTable.append('tbody').selectAll('tr')
   //              .data(data[desired_columns[0]]).enter()
   //              .append('tr');
   // rows.selectAll('td')
