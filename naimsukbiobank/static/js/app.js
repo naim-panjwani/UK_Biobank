@@ -78,6 +78,9 @@ function buildTable(data) {
   var tbody = d3.select("#variants-table").select("tbody");
   
   // Clear table:
+  if ( $.fn.dataTable.isDataTable( '#variants-table' ) ) {
+    $('#variants-table').DataTable().destroy();
+  }
   tbody.text("")
 
   // Desired column headers:
@@ -90,7 +93,8 @@ function buildTable(data) {
       row.append('td').text(data[desired_columns[j]][i]);
     }
   }
-  $(document).ready(function () {
+  // Add DataTables functionality:
+  varTable = $(document).ready(function () {
     $('#variants-table').DataTable();
     $('.dataTables_length').addClass('bs-select');
   });
